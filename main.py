@@ -7,7 +7,8 @@ conn = mysql.connector.connect(
 )
 print("資料庫連線成功！")
 
-from fastapi import FastAPI, Request, Body
+from fastapi import FastAPI, Request, Body, Path
+from typing  import Annotated 
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import json
@@ -83,7 +84,7 @@ def checkexpenses(request:Request):
     email = member["email"]
     cursor = conn.cursor()
     cursor.execute("""
-                SELECT expense.item, expense.cost, expense.category, expense.created_time 
+                SELECT expense.id, expense.item, expense.cost, expense.category, expense.created_time 
                 FROM member INNER JOIN expense 
                 ON member.id = expense.member_id 
                 WHERE member.id = %s 
@@ -112,6 +113,21 @@ def input_expense(request:Request, body=Body(None)):
     return {"ok": True}
 
 
+# 刪除花費紀錄
+@app.delete("/api/member/auth/expenses")
+def delete_expense(request:Request, body=Body(None)):
+    body = json.loads(body)
+    expense_id = body["expense_id"]
+    member = request.session["member"]
+    member_id = member["member_id"]
+    cursor = conn.cursor()
+    cursor.execute("""
+                   DELETE FROM expense 
+                   WHERE id = %s AND member_id = %s
+                   """, (expense_id, member_id))
+    conn.commit()
+    return {"ok": True}
+
 # 計算平均花費
 @app.get("/api/member/auth/expenses/avg")
 def calculate_avg_expense(request:Request):
@@ -127,6 +143,21 @@ def calculate_avg_expense(request:Request):
     result = cursor.fetchone()
     avg_cost = result[0] if result[0] is not None else 0
     return {"ok": True, "avg_cost": avg_cost}
+
+@app.get("/api/member/auth/expenses/piechart")
+def get_piechart(request:Request):
+    member = request.session["member"]
+    member_id = member["member_id"]
+    cursor = conn.cursor()
+    cursor.execute("""
+                   SELECT category, SUM(cost) 
+                   FROM expense 
+                   WHERE member_id = %s AND YEAR(created_time) = YEAR(CURRENT_DATE()) AND MONTH(created_time) = MONTH(CURRENT_DATE())
+                   GROUP BY category 
+                   ORDER BY SUM(cost) DESC;
+                   """, (member_id,))
+    data = cursor.fetchall()
+    return {"ok": True, "data": data}
 
 
 app.mount("/", StaticFiles(directory="static", html=True))

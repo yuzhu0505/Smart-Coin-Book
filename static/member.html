@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>記帳頁面</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </head>
 <body>
     <h1>記帳頁面</h1>
@@ -32,8 +34,86 @@
 
     <h2>📊 統計資訊</h2>
     <div>本月平均單筆花費： <span id="avg-expense-display">計算中...</span> 元</div>
+    
+    <div style="width: 400px; height: 400px; margin-top: 20px;">
+        <canvas id="myPieChart"></canvas>
+    </div>
     <button onclick="signout();">登出</button>
+
+
+
     <script>  
+        // 宣告一個全域變數來記住目前的圖表
+        let pieChartInstance = null; 
+
+        // 畫圓餅圖的專屬函式
+        async function draw_piechart() {
+            let response = await fetch("/api/member/auth/expenses/piechart", {
+                method: "GET"
+            });
+            let result = await response.json();
+
+            if (result.ok) {
+                let labels = [];     // 裝類別 (如：餐飲、交通)
+                let chartData = [];  // 裝金額 (如：5000, 1200)
+
+                // 剝開後端傳來的雙層陣列
+                for(let i = 0; i < result.data.length; i++) {
+                    labels.push(result.data[i][0]);  // 第 0 個位置是類別名稱
+                    chartData.push(result.data[i][1]); // 第 1 個位置是加總金額
+                }
+
+                // 抓取剛剛準備好的畫布
+                let ctx = document.querySelector('#myPieChart').getContext('2d');
+
+                // ⚠️ 【防呆機制】：如果畫布上已經有舊的圖表，必須先「摧毀 (destroy)」它，才能畫新的，否則圖表重疊會大當機！
+                if (pieChartInstance !== null) {
+                    pieChartInstance.destroy();
+                }
+
+                // 正式請 Chart.js 幫我們畫圖！
+                pieChartInstance = new Chart(ctx, {
+                    plugins: [ChartDataLabels],
+                    type: 'pie', // 圖表類型：圓餅圖 (pie), 也可以改成長條圖 (bar) 喔！
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: [ // 幫每個類別上不同顏色
+                                '#FF6384', // 紅
+                                '#36A2EB', // 藍
+                                '#FFCE56', // 黃
+                                '#4BC0C0', // 綠
+                                '#9966FF', // 紫
+                                '#FF9F40'  // 橘
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' }, // 把圖例放在右邊
+                            datalabels: {
+                                display: true, // 顯示標籤
+                                color: '#fff', // 百分比字體改成白色 (在背景上才清楚)
+                                font: {
+                                    weight: 'bold',
+                                    size: 16 // 調整字體大小
+                                },
+                                
+                                formatter: function(value){
+                                    return value
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+
+
         // 新增花費
         async function input_expense(){
             let item = document.querySelector("#item").value;
@@ -52,6 +132,7 @@
                 alert("新增花費成功");
                 await CheckExpense();
                 await calculate_avg_expense();
+                await draw_piechart();
             }
         }
 
@@ -71,11 +152,21 @@
                 // 3. 用 for 迴圈，把陣列裡面的每一筆花費拿出來
                 for(let i = 0; i < result.expenses.length; i++){
                     let exp = result.expenses[i];
+
+                    let exp_id = exp[0];
+                    let exp_item = exp[1];
+                    let exp_cost = exp[2];
+                    let exp_category = exp[3];
+
                     // 把日期字串切割成 [年, 月, 日]
-                    let yearmonth = exp[3].split("-")[0] + "/" + exp[3].split("-")[1];
+                    let yearmonth = exp[4].split("-")[0] + "/" + exp[4].split("-")[1];
                     
                     // 4. 把資料組裝成一行字，塞進盒子裡 (這裡先用最簡單的文字顯示)
-                    box.innerHTML += `<div>【${yearmonth}】品項：${exp[0]}，花費：${exp[1]} 元，類別：${exp[2]}</div>`;
+                    box.innerHTML += 
+                    `<div>
+                        【${yearmonth}】品項：${exp_item}，花費：${exp_cost} 元，類別：${exp_category}
+                        <button onclick="delete_expense(${exp_id});">❌ 刪除</button>
+                    </div>`;
                 }
             }    
         }
@@ -90,6 +181,7 @@
                 document.querySelector("#name").textContent = result.name;
                 await CheckExpense();
                 await calculate_avg_expense();
+                await draw_piechart();
             }else{
                 alert("帳號尚未登入");
                 window.location = "/index.html";
@@ -110,6 +202,26 @@
                 document.querySelector("#avg-expense-display").textContent = avg_cost;
             }
         }
+
+        async function delete_expense(exp_id){
+            if(!confirm("確定要刪除這筆花費嗎？")){
+                return; // 如果按取消，就直接結束，什麼都不做
+            }
+            let response = await fetch("/api/member/auth/expenses",{
+                method:"DELETE",
+                body: JSON.stringify({
+                    "expense_id": exp_id
+                    })    
+            });
+            let result = await response.json();
+            if(result.ok){
+                alert("刪除花費成功");
+                await CheckExpense();
+                await calculate_avg_expense();
+                await draw_piechart();
+            }
+        }
+
 
         // 登出功能
         async function signout(){
