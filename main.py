@@ -125,7 +125,7 @@ def calculate_avg_expense(request:Request):
                     AND MONTH(created_time) = MONTH(CURRENT_DATE());
                    """, (member_id,))
     result = cursor.fetchone()
-    avg_cost = float(result[0])
+    avg_cost = result[0] if result[0] is not None else 0
     return {"ok": True, "avg_cost": avg_cost}
 
 

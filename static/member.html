@@ -12,7 +12,18 @@
     <div>
         品 項:<input type="text" id="item"><br>
         金 額:<input type="number" id="cost"><br>
-        類 別:<input type="text" id="category"><br>
+        類 別:
+        <select id="category">
+            <option value="General"> ---請選擇---</option>
+            <option value="餐飲">🍔 餐飲</option>
+            <option value="交通">🚗 交通</option>
+            <option value="生活用品">🛒 生活用品</option>
+            <option value="娛樂">🎮 娛樂</option>
+            <option value="3C產品">🖥️ 3C產品</option>
+            <option value="服飾">🧥 服飾</option>
+            <option value="醫療">💊 醫療</option>
+            <option value="其他">📦 其他</option>
+        </select><br>
         <button onclick="input_expense();">新增花費</button>
     </div>
 
@@ -21,7 +32,6 @@
 
     <h2>📊 統計資訊</h2>
     <div>本月平均單筆花費： <span id="avg-expense-display">計算中...</span> 元</div>
-
     <button onclick="signout();">登出</button>
     <script>  
         // 新增花費
@@ -40,14 +50,14 @@
             let result = await response.json();
             if(result.ok){
                 alert("新增花費成功");
-                CheckExpense();
-                calculate_avg_expense();
+                await CheckExpense();
+                await calculate_avg_expense();
             }
         }
 
         // 顯示花費紀錄
         async function CheckExpense(){
-            let response = await fetch("api/member/auth/expenses", {
+            let response = await fetch("/api/member/auth/expenses", {
                 method:"GET"
             });
             let result = await response.json();
@@ -72,14 +82,14 @@
         
         // 檢查登入狀態
         async function CheckStatus(){
-            let response = await fetch("api/member/auth", {
+            let response = await fetch("/api/member/auth", {
                 method:"GET"
             });
             let result = await response.json();
             if(result.ok){
                 document.querySelector("#name").textContent = result.name;
-                CheckExpense();
-                calculate_avg_expense();
+                await CheckExpense();
+                await calculate_avg_expense();
             }else{
                 alert("帳號尚未登入");
                 window.location = "/index.html";
@@ -96,17 +106,14 @@
                 // 拿到後端算好的數字
                 let avg_cost = result.avg_cost;
                 
-                // 【升級裝備】：如果除不盡（例如 100/3=33.3333），我們用 Math.round() 幫它四捨五入成整數！
-                let rounded_cost = Math.round(avg_cost);
-                
-                // 抓到畫面上的容器，把數字塞進去
-                document.querySelector("#avg-expense-display").textContent = rounded_cost;
+                // // 抓到畫面上的容器，把數字塞進去
+                document.querySelector("#avg-expense-display").textContent = avg_cost;
             }
         }
 
         // 登出功能
         async function signout(){
-            let response = await fetch("api/member/auth", {
+            let response = await fetch("/api/member/auth", {
                 method:"DELETE"
             });
             let result = await response.json();
