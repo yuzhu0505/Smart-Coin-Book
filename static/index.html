@@ -1,24 +1,138 @@
 <!DOCTYPE html> 
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>會員系統</title>
+    <title>會員系統 | 智慧記帳本</title>
+    <style>
+        /* 1. 基礎重置與字體設定：讓畫面看起來乾淨現代 */
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        /* 2. 背景設定：把內容置中，加上柔和的灰藍色背景 */
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* 3. 主容器：加上白色卡片、圓角與陰影 */
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 400px; /* 限制最寬度，手機上看也剛剛好 */
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 4. 標題設定 */
+        h2 {
+            text-align: center;
+            color: #333333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* 5. 區塊分隔線：讓登入跟註冊視覺上分開 */
+        .divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 30px 0;
+        }
+
+        /* 6. 輸入框外層容器 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        /* 7. 標籤文字 */
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666666;
+            font-size: 14px;
+        }
+
+        /* 8. 輸入框本體：加上圓角、內邊距，點擊時會變色 */
+        .form-group input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #4A90E2; /* 聚焦時外框變成藍色 */
+        }
+
+        /* 9. 按鈕設定：滿版寬度、無邊框、加上滑鼠懸停動畫 */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4A90E2; /* 質感藍色 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #357ABD; /* 滑鼠移過去變深色 */
+        }
+
+        /* 10. 註冊按鈕特化：給它一個綠色，與登入藍色做區別 */
+        .btn-signup {
+            background-color: #2ECC71; 
+        }
+        .btn-signup:hover {
+            background-color: #27AE60;
+        }
+    </style>
 </head>
 <body>
-    <h2>登入證號</h2>
-    <div>
-        信 箱:<input type="text" id="signin-email"><br>
-        密 碼:<input type="password" id="signin-password"><br>
-        <button onclick="signin();">登入</button>
-    </div>
 
-    <h2>註冊證號</h2>
-    <div>
-        姓 名:<input type="text" id="signup-name"><br>
-        信 箱:<input type="text" id="signup-email"><br>
-        密 碼:<input type="password" id="signup-password"><br>
-        <button onclick="signup();">註冊</button>
+    <div class="container">
+        
+        <h2>會員登入</h2>
+        <div class="form-group">
+            <label>信箱 (Email)</label>
+            <input type="text" id="signin-email" placeholder="請輸入信箱">
+        </div>
+        <div class="form-group">
+            <label>密碼 (Password)</label>
+            <input type="password" id="signin-password" placeholder="請輸入密碼">
+        </div>
+        <button onclick="signin();">登入</button>
+
+        <div class="divider"></div>
+
+        <h2>註冊新帳號</h2>
+        <div class="form-group">
+            <label>姓名 (Name)</label>
+            <input type="text" id="signup-name" placeholder="請輸入姓名">
+        </div>
+        <div class="form-group">
+            <label>信箱 (Email)</label>
+            <input type="text" id="signup-email" placeholder="請輸入信箱">
+        </div>
+        <div class="form-group">
+            <label>密碼 (Password)</label>
+            <input type="password" id="signup-password" placeholder="請輸入密碼">
+        </div>
+        <button class="btn-signup" onclick="signup();">註冊</button>
+
     </div>
 
     <script>

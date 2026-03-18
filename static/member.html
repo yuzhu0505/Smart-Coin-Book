@@ -1,110 +1,270 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>記帳頁面</title>
+    <title>智慧記帳本 | 儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        /* 1. 基礎重置與配色 */
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        body {
+            background-color: #f0f2f5; /* 柔和的灰藍底色 */
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* 2. 頂部導覽列 (Navbar) */
+        .navbar {
+            background-color: #ffffff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between; /* 左右對齊 */
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #4A90E2;
+        }
+        .welcome-text {
+            font-size: 16px;
+            color: #555;
+            font-weight: bold;
+        }
+        .btn-logout {
+            background-color: #f8f9fa;
+            color: #dc3545; /* 危險的紅色 */
+            border: 1px solid #dc3545;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .btn-logout:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* 3. 核心儀表板排版 (Grid 網格) */
+        .dashboard-container {
+            max-width: 1200px; /* 限制最大寬度，大螢幕不會太散 */
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 左右兩欄，各佔一半 */
+            gap: 20px; /* 卡片之間的距離 */
+        }
+
+        /* 4. 通用卡片設計 */
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 10px;
+        }
+
+        /* 5. 記帳控制台 (左卡片) 內部樣式 */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .btn-submit {
+            width: 100%;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        .btn-submit:hover { background-color: #357ABD; }
+
+        /* 6. 數據洞察區 (右卡片) 內部樣式 */
+        .avg-display {
+            background-color: #e8f4fd; /* 淺藍色凸顯底色 */
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .avg-number {
+            font-size: 24px;
+            color: #e74c3c; /* 數字用搶眼的紅色 */
+        }
+        .chart-container {
+            position: relative;
+            height: 250px; /* 控制圓餅圖高度 */
+            width: 100%;
+        }
+
+        /* 7. 歷史明細區 (底部卡片，橫跨兩欄) */
+        .history-card {
+            grid-column: 1 / -1; /* 佔滿整列 */
+            margin-bottom: 40px;
+        }
+        .expense-item {
+            display: flex;
+            justify-content: space-between; /* 左右撐開 */
+            align-items: center;
+            padding: 15px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .expense-item:last-child { border-bottom: none; } /* 最後一個不要底線 */
+        
+        .expense-info { display: flex; align-items: center; gap: 15px; }
+        .expense-date { font-size: 13px; color: #999; width: 60px; }
+        .expense-category-badge {
+            background-color: #f1f3f5;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+        }
+        .expense-name { font-size: 16px; font-weight: bold; color: #333; }
+        
+        .expense-action { display: flex; align-items: center; gap: 15px; }
+        .expense-price { font-size: 18px; font-weight: bold; color: #e74c3c; }
+        .btn-delete {
+            background-color: transparent;
+            border: 1px solid #ffcccc;
+            color: #dc3545;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-delete:hover { background-color: #ffcccc; }
+
+        /* 8. RWD 手機版設定 (小於 768px 時變成單欄) */
+        @media (max-width: 768px) {
+            .dashboard-container { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 10px; }
+        }
+    </style>
 </head>
 <body>
-    <h1>記帳頁面</h1>
-    <div><span id="name"></span>的記帳頁面！</div>
-    <hr/>
-    <div>
-        品 項:<input type="text" id="item"><br>
-        金 額:<input type="number" id="cost"><br>
-        類 別:
-        <select id="category">
-            <option value="General"> ---請選擇---</option>
-            <option value="餐飲">🍔 餐飲</option>
-            <option value="交通">🚗 交通</option>
-            <option value="生活用品">🛒 生活用品</option>
-            <option value="娛樂">🎮 娛樂</option>
-            <option value="3C產品">🖥️ 3C產品</option>
-            <option value="服飾">🧥 服飾</option>
-            <option value="醫療">💊 醫療</option>
-            <option value="其他">📦 其他</option>
-        </select><br>
-        <button onclick="input_expense();">新增花費</button>
+
+    <div class="navbar">
+        <h1>💰 智慧記帳本</h1>
+        <div class="welcome-text">歡迎回來，<span id="name"></span>！</div>
+        <button class="btn-logout" onclick="signout();">🚪 登出系統</button>
     </div>
 
-    <h2>我的最新花費紀錄</h2>
-    <div id="expense-list"></div>
+    <div class="dashboard-container">
 
-    <h2>📊 統計資訊</h2>
-    <div>本月平均單筆花費： <span id="avg-expense-display">計算中...</span> 元</div>
-    
-    <div style="width: 400px; height: 400px; margin-top: 20px;">
-        <canvas id="myPieChart"></canvas>
+        <div class="card">
+            <h2>✍️ 新增花費</h2>
+            <div class="form-group">
+                <label>品項名稱</label>
+                <input type="text" id="item" placeholder="例如：早餐、捷運...">
+            </div>
+            <div class="form-group">
+                <label>花費金額</label>
+                <input type="number" id="cost" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>消費類別</label>
+                <select id="category">
+                    <option value="General"> ---請選擇---</option>
+                    <option value="餐飲">🍔 餐飲</option>
+                    <option value="交通">🚗 交通</option>
+                    <option value="生活用品">🛒 生活用品</option>
+                    <option value="娛樂">🎮 娛樂</option>
+                    <option value="3C產品">🖥️ 3C產品</option>
+                    <option value="服飾">🧥 服飾</option>
+                    <option value="醫療">💊 醫療</option>
+                    <option value="其他">📦 其他</option>
+                </select>
+            </div>
+            <button class="btn-submit" onclick="input_expense();">➕ 記一筆</button>
+        </div>
+
+        <div class="card">
+            <h2>📊 本月數據洞察</h2>
+            <div class="avg-display">
+                平均單筆花費 <br>
+                <span class="avg-number" id="avg-expense-display">--</span> <span style="font-size: 14px; color: #666;">元</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="myPieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card history-card">
+            <h2>📜 最近花費紀錄</h2>
+            <div id="expense-list"></div>
+        </div>
+
     </div>
-    <button onclick="signout();">登出</button>
-
-
 
     <script>  
-        // 宣告一個全域變數來記住目前的圖表
         let pieChartInstance = null; 
 
-        // 畫圓餅圖的專屬函式
         async function draw_piechart() {
-            let response = await fetch("/api/member/auth/expenses/piechart", {
-                method: "GET"
-            });
+            let response = await fetch("/api/member/auth/expenses/piechart", { method: "GET" });
             let result = await response.json();
 
             if (result.ok) {
-                let labels = [];     // 裝類別 (如：餐飲、交通)
-                let chartData = [];  // 裝金額 (如：5000, 1200)
-
-                // 剝開後端傳來的雙層陣列
+                let labels = [];     
+                let chartData = [];  
                 for(let i = 0; i < result.data.length; i++) {
-                    labels.push(result.data[i][0]);  // 第 0 個位置是類別名稱
-                    chartData.push(result.data[i][1]); // 第 1 個位置是加總金額
+                    labels.push(result.data[i][0]);  
+                    chartData.push(result.data[i][1]); 
                 }
 
-                // 抓取剛剛準備好的畫布
                 let ctx = document.querySelector('#myPieChart').getContext('2d');
+                if (pieChartInstance !== null) { pieChartInstance.destroy(); }
 
-                // ⚠️ 【防呆機制】：如果畫布上已經有舊的圖表，必須先「摧毀 (destroy)」它，才能畫新的，否則圖表重疊會大當機！
-                if (pieChartInstance !== null) {
-                    pieChartInstance.destroy();
-                }
-
-                // 正式請 Chart.js 幫我們畫圖！
                 pieChartInstance = new Chart(ctx, {
                     plugins: [ChartDataLabels],
-                    type: 'pie', // 圖表類型：圓餅圖 (pie), 也可以改成長條圖 (bar) 喔！
+                    type: 'pie', 
                     data: {
                         labels: labels,
                         datasets: [{
                             data: chartData,
-                            backgroundColor: [ // 幫每個類別上不同顏色
-                                '#FF6384', // 紅
-                                '#36A2EB', // 藍
-                                '#FFCE56', // 黃
-                                '#4BC0C0', // 綠
-                                '#9966FF', // 紫
-                                '#FF9F40'  // 橘
-                            ]
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'right' }, // 把圖例放在右邊
+                            legend: { position: 'right' }, 
                             datalabels: {
-                                display: true, // 顯示標籤
-                                color: '#fff', // 百分比字體改成白色 (在背景上才清楚)
-                                font: {
-                                    weight: 'bold',
-                                    size: 16 // 調整字體大小
-                                },
-                                
-                                formatter: function(value){
-                                    return value
-                                }
+                                display: true, 
+                                color: '#fff', 
+                                font: { weight: 'bold', size: 14 },
+                                formatter: function(value){ return value }
                             }
                         }
                     }
@@ -112,70 +272,60 @@
             }
         }
 
-
-
-        // 新增花費
         async function input_expense(){
             let item = document.querySelector("#item").value;
             let cost = document.querySelector("#cost").value;
             let category = document.querySelector("#category").value;
             let response = await fetch("/api/member/auth/expenses",{
                 method:"POST",
-                body: JSON.stringify({
-                    "item": item, 
-                    "cost": cost,
-                    "category": category
-                    })
+                body: JSON.stringify({ "item": item, "cost": cost, "category": category })
             });
             let result = await response.json();
             if(result.ok){
-                alert("新增花費成功");
+                // 新增成功後，幫使用者清空輸入框，方便記下一筆！
+                document.querySelector("#item").value = "";
+                document.querySelector("#cost").value = "";
+                document.querySelector("#category").value = "General";
+                
                 await CheckExpense();
                 await calculate_avg_expense();
                 await draw_piechart();
             }
         }
 
-        // 顯示花費紀錄
         async function CheckExpense(){
-            let response = await fetch("/api/member/auth/expenses", {
-                method:"GET"
-            });
+            let response = await fetch("/api/member/auth/expenses", { method:"GET" });
             let result = await response.json();
             if(result.ok){
-                // 1. 抓到我們剛剛在 HTML 準備的空盒子
                 let box = document.querySelector("#expense-list");
-                
-                // 2. 先把盒子清空 (防呆：避免重複執行時資料一直疊加)
                 box.innerHTML = ""; 
-                
-                // 3. 用 for 迴圈，把陣列裡面的每一筆花費拿出來
                 for(let i = 0; i < result.expenses.length; i++){
                     let exp = result.expenses[i];
-
                     let exp_id = exp[0];
                     let exp_item = exp[1];
                     let exp_cost = exp[2];
                     let exp_category = exp[3];
-
-                    // 把日期字串切割成 [年, 月, 日]
                     let yearmonth = exp[4].split("-")[0] + "/" + exp[4].split("-")[1];
                     
-                    // 4. 把資料組裝成一行字，塞進盒子裡 (這裡先用最簡單的文字顯示)
-                    box.innerHTML += 
-                    `<div>
-                        【${yearmonth}】品項：${exp_item}，花費：${exp_cost} 元，類別：${exp_category}
-                        <button onclick="delete_expense(${exp_id});">❌ 刪除</button>
+                    // 🌟 【升級裝備】：用精緻的條目設計取代原本的純文字
+                    box.innerHTML += `
+                    <div class="expense-item">
+                        <div class="expense-info">
+                            <span class="expense-date">${yearmonth}</span>
+                            <span class="expense-category-badge">${exp_category}</span>
+                            <span class="expense-name">${exp_item}</span>
+                        </div>
+                        <div class="expense-action">
+                            <span class="expense-price">$${exp_cost}</span>
+                            <button class="btn-delete" onclick="delete_expense(${exp_id});">❌ 刪除</button>
+                        </div>
                     </div>`;
                 }
             }    
         }
         
-        // 檢查登入狀態
         async function CheckStatus(){
-            let response = await fetch("/api/member/auth", {
-                method:"GET"
-            });
+            let response = await fetch("/api/member/auth", { method:"GET" });
             let result = await response.json();
             if(result.ok){
                 document.querySelector("#name").textContent = result.name;
@@ -183,57 +333,40 @@
                 await calculate_avg_expense();
                 await draw_piechart();
             }else{
-                alert("帳號尚未登入");
                 window.location = "/index.html";
             }
         }
 
-        // 計算平均花費
         async function calculate_avg_expense(){
-            let response = await fetch("/api/member/auth/expenses/avg", {
-                method:"GET"
-            });
+            let response = await fetch("/api/member/auth/expenses/avg", { method:"GET" });
             let result = await response.json();
             if(result.ok){
-                // 拿到後端算好的數字
-                let avg_cost = result.avg_cost;
-                
-                // // 抓到畫面上的容器，把數字塞進去
-                document.querySelector("#avg-expense-display").textContent = avg_cost;
+                document.querySelector("#avg-expense-display").textContent = result.avg_cost;
             }
         }
 
         async function delete_expense(exp_id){
-            if(!confirm("確定要刪除這筆花費嗎？")){
-                return; // 如果按取消，就直接結束，什麼都不做
-            }
+            if(!confirm("確定要刪除這筆花費嗎？")){ return; }
             let response = await fetch("/api/member/auth/expenses",{
                 method:"DELETE",
-                body: JSON.stringify({
-                    "expense_id": exp_id
-                    })    
+                body: JSON.stringify({ "expense_id": exp_id })    
             });
             let result = await response.json();
             if(result.ok){
-                alert("刪除花費成功");
                 await CheckExpense();
                 await calculate_avg_expense();
                 await draw_piechart();
             }
         }
 
-
-        // 登出功能
         async function signout(){
-            let response = await fetch("/api/member/auth", {
-                method:"DELETE"
-            });
+            let response = await fetch("/api/member/auth", { method:"DELETE" });
             let result = await response.json();
             if(result.ok){
-                alert("登出成功");
                 window.location = "/index.html";
             }
         }
+        
         CheckStatus();
     </script>
 </body>
