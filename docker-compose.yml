@@ -1,0 +1,34 @@
+name: expense-system
+
+services:
+  # 🐳 第一個貨櫃：MySQL 資料庫 (代號叫 db)
+  db:
+    image: mysql:8.0.35  # 直接從網路下載官方的 MySQL 引擎
+    restart: always      # 如果不小心當機，自動重啟
+    environment:
+      # 把我們 .env 裡的密碼跟資料庫名稱，偷偷塞給 MySQL 讓它自動建置！
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      # 🛡️ 【資料保命符】把貨櫃裡的資料庫，掛載到外面的硬碟。這樣貨櫃毀滅，記帳資料也不會不見！
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+
+  # 🐳 第二個貨櫃：你的 FastAPI 記帳程式 (代號叫 web)
+  web:
+    build: .             # 告訴指揮官：請去讀旁邊的 Dockerfile 來打包這個貨櫃
+    restart: always
+    ports:
+      - "8000:8000"      # 把網頁開在 8000 port
+    env_file:
+      - .env             # 把我們的保險箱交給程式
+    environment:
+      # 🪄 【網路魔法】強制覆蓋 DB_HOST！告訴 App：「不要找 localhost 了，去隔壁找代號叫 'db' 的貨櫃！」
+      - DB_HOST=db
+    depends_on:
+      - db               # 貼心設定：等資料庫貨櫃先啟動後，App 貨櫃再啟動
+
+volumes:
+  db_data:               # 宣告那個保命符硬碟的存在

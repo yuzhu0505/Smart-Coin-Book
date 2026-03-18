@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS member(
+	id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    
+    INDEX idx_name(name),
+    UNIQUE INDEX idx_email(email)
+
+);
+
+CREATE TABLE IF NOT EXISTS expense(
+	id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    member_id INT UNSIGNED NOT NULL,
+    item VARCHAR(255) NOT NULL,
+    cost INT NOT NULL,
+    category VARCHAR(255) DEFAULT "General",
+    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (member_id) REFERENCES member(id)
+);
