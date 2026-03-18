@@ -1,9 +1,13 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import mysql.connector
 conn = mysql.connector.connect(
-    user = "root",
-    password = "112024505", # "YOUR_PASSWORD_HERE",
-    host = "localhost",
-    database = "expensesystem" # "YOUR_DATABASE_HERE"
+    user = os.getenv("DB_USER"),
+    password = os.getenv("DB_PASSWORD"),
+    host = os.getenv("DB_HOST"),
+    database = os.getenv("DB_NAME")
 )
 print("資料庫連線成功！")
 
