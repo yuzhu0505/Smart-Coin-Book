@@ -15,6 +15,7 @@ import json
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="dinu")
 
+# 註冊會員
 @app.post("/api/member")
 def signup(body=Body(None)):
     body = json.loads(body)
@@ -35,6 +36,7 @@ def signup(body=Body(None)):
     else:
         return {"ok": False}    
 
+# 登入
 @app.put("/api/member/auth")
 def signin(request:Request, body=Body(None)):
     body = json.loads(body)
@@ -57,6 +59,7 @@ def signin(request:Request, body=Body(None)):
         return {"ok": True}
     
 
+# 檢查登入狀態
 @app.get("/api/member/auth")    
 def checkstatus(request:Request):
     # 如果 session 中有 member，表示已經登入，回傳 member 的 name 和 email
@@ -65,13 +68,14 @@ def checkstatus(request:Request):
         return {"ok": True, "member_id": member["member_id"], "name": member["name"], "email": member["email"]}
     else:
         return {"ok": False}
-    
+
+# 登出
 @app.delete("/api/member/auth")
 def signout(request:Request):
     request.session["member"] = None
     return {"ok":True}
 
-
+# 顯示花費紀錄
 @app.get("/api/member/auth/expenses")    
 def checkexpenses(request:Request):
     member = request.session["member"]
@@ -90,6 +94,7 @@ def checkexpenses(request:Request):
     result = cursor.fetchall()
     return {"ok": True, "expenses": result}
 
+# 新增花費紀錄
 @app.post("/api/member/auth/expenses")
 def input_expense(request:Request, body=Body(None)):
     body = json.loads(body)
@@ -105,5 +110,23 @@ def input_expense(request:Request, body=Body(None)):
                    """, (member_id, item, cost, category))
     conn.commit()
     return {"ok": True}
+
+
+# 計算平均花費
+@app.get("/api/member/auth/expenses/avg")
+def calculate_avg_expense(request:Request):
+    member = request.session["member"]
+    member_id = member["member_id"]
+    cursor = conn.cursor()
+    cursor.execute("""
+                   SELECT IFNULL(AVG(cost), 0) FROM expense 
+                   WHERE member_id = %s
+                    AND YEAR(created_time) = YEAR(CURRENT_DATE())
+                    AND MONTH(created_time) = MONTH(CURRENT_DATE());
+                   """, (member_id,))
+    result = cursor.fetchone()
+    avg_cost = float(result[0])
+    return {"ok": True, "avg_cost": avg_cost}
+
 
 app.mount("/", StaticFiles(directory="static", html=True))

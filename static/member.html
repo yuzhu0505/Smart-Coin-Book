@@ -18,8 +18,13 @@
 
     <h2>我的最新花費紀錄</h2>
     <div id="expense-list"></div>
+
+    <h2>📊 統計資訊</h2>
+    <div>本月平均單筆花費： <span id="avg-expense-display">計算中...</span> 元</div>
+
     <button onclick="signout();">登出</button>
     <script>  
+        // 新增花費
         async function input_expense(){
             let item = document.querySelector("#item").value;
             let cost = document.querySelector("#cost").value;
@@ -36,8 +41,11 @@
             if(result.ok){
                 alert("新增花費成功");
                 CheckExpense();
+                calculate_avg_expense();
             }
         }
+
+        // 顯示花費紀錄
         async function CheckExpense(){
             let response = await fetch("api/member/auth/expenses", {
                 method:"GET"
@@ -71,12 +79,32 @@
             if(result.ok){
                 document.querySelector("#name").textContent = result.name;
                 CheckExpense();
+                calculate_avg_expense();
             }else{
                 alert("帳號尚未登入");
                 window.location = "/index.html";
             }
         }
 
+        // 計算平均花費
+        async function calculate_avg_expense(){
+            let response = await fetch("/api/member/auth/expenses/avg", {
+                method:"GET"
+            });
+            let result = await response.json();
+            if(result.ok){
+                // 拿到後端算好的數字
+                let avg_cost = result.avg_cost;
+                
+                // 【升級裝備】：如果除不盡（例如 100/3=33.3333），我們用 Math.round() 幫它四捨五入成整數！
+                let rounded_cost = Math.round(avg_cost);
+                
+                // 抓到畫面上的容器，把數字塞進去
+                document.querySelector("#avg-expense-display").textContent = rounded_cost;
+            }
+        }
+
+        // 登出功能
         async function signout(){
             let response = await fetch("api/member/auth", {
                 method:"DELETE"
