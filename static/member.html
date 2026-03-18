@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>記帳頁面</title>
+</head>
+<body>
+    <h1>記帳頁面</h1>
+    <div><span id="name"></span>的記帳頁面！</div>
+    <hr/>
+    <div>
+        品 項:<input type="text" id="item"><br>
+        金 額:<input type="number" id="cost"><br>
+        類 別:<input type="text" id="category"><br>
+        <button onclick="input_expense();">新增花費</button>
+    </div>
+
+    <h2>我的最新花費紀錄</h2>
+    <div id="expense-list"></div>
+    <button onclick="signout();">登出</button>
+    <script>  
+        async function input_expense(){
+            let item = document.querySelector("#item").value;
+            let cost = document.querySelector("#cost").value;
+            let category = document.querySelector("#category").value;
+            let response = await fetch("/api/member/auth/expenses",{
+                method:"POST",
+                body: JSON.stringify({
+                    "item": item, 
+                    "cost": cost,
+                    "category": category
+                    })
+            });
+            let result = await response.json();
+            if(result.ok){
+                alert("新增花費成功");
+                CheckExpense();
+            }
+        }
+        async function CheckExpense(){
+            let response = await fetch("api/member/auth/expenses", {
+                method:"GET"
+            });
+            let result = await response.json();
+            if(result.ok){
+                // 1. 抓到我們剛剛在 HTML 準備的空盒子
+                let box = document.querySelector("#expense-list");
+                
+                // 2. 先把盒子清空 (防呆：避免重複執行時資料一直疊加)
+                box.innerHTML = ""; 
+                
+                // 3. 用 for 迴圈，把陣列裡面的每一筆花費拿出來
+                for(let i = 0; i < result.expenses.length; i++){
+                    let exp = result.expenses[i];
+                    // 把日期字串切割成 [年, 月, 日]
+                    let yearmonth = exp[3].split("-")[0] + "/" + exp[3].split("-")[1];
+                    
+                    // 4. 把資料組裝成一行字，塞進盒子裡 (這裡先用最簡單的文字顯示)
+                    box.innerHTML += `<div>【${yearmonth}】品項：${exp[0]}，花費：${exp[1]} 元，類別：${exp[2]}</div>`;
+                }
+            }    
+        }
+        
+        // 檢查登入狀態
+        async function CheckStatus(){
+            let response = await fetch("api/member/auth", {
+                method:"GET"
+            });
+            let result = await response.json();
+            if(result.ok){
+                document.querySelector("#name").textContent = result.name;
+                CheckExpense();
+            }else{
+                alert("帳號尚未登入");
+                window.location = "/index.html";
+            }
+        }
+
+        async function signout(){
+            let response = await fetch("api/member/auth", {
+                method:"DELETE"
+            });
+            let result = await response.json();
+            if(result.ok){
+                alert("登出成功");
+                window.location = "/index.html";
+            }
+        }
+        CheckStatus();
+    </script>
+</body>
+</html>
