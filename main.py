@@ -1,9 +1,9 @@
 import mysql.connector
 conn = mysql.connector.connect(
     user = "root",
-    password = "112024505",
+    password = "YOUR_PASSWORD_HERE",
     host = "localhost",
-    database = "expensesystem"
+    database = "YOUR_DATABASE_HERE"
 )
 print("資料庫連線成功！")
 
